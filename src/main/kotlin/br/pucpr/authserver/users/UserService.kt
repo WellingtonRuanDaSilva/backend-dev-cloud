@@ -81,17 +81,57 @@ class UserService(
         return user
     }
 
-    fun login(email: String, password: String): LoginResponse {
-        val user = repository.findByEmail(email) ?: throw UnauthorizedException("User $email not found")
+    fun login(request: LoginRequest): UserResponse? {
+        val user = repository.findByPhone(request.phone)
 
-        if (user.password != password)
-            throw UnauthorizedException("Invalid password")
+        if (user != null && user.isActive && user.deviceUuid == request.uuid) {
+            // Login bem sucedido (telefone e uuid conferem)
+            return UserResponse(user) // Assumindo que você converte User para UserResponse aqui
+        }
 
-        log.info("User ${user.id} is logged in")
-        return LoginResponse(
-            token = jwt.createToken(user),
-            user = toResponse(user)
-        )
+        // Caso telefone não exista, ou UUID seja diferente:
+        val code = generateConfirmationCode()
+
+        val targetUser = user ?: User(phone = request.phone)
+        targetUser.confirmationCode = code
+        // Não salva o UUID novo ainda, espera a confirmação
+
+        repository.save(targetUser)
+
+        // Envia o SMS
+        smsClient.sendSms(request.phone, "Seu código de confirmação é: $code")
+
+        return null // Sinaliza para o Controller retornar 202
+    }
+
+    fun confirmUser(request: ConfirmUserRequest): UserResponse {
+        val user = repository.findByPhone(request.phone)
+
+        // Retorna 404 se não houver código, se o código não bater, ou se o usuário não existir
+        if (user == null || user.confirmationCode == null || user.confirmationCode != request.code) {
+            throw NotFoundException("Código de confirmação inválido ou não encontrado para este número.")
+        }
+
+        // Código correto: ativa usuário e atualiza UUID
+        user.isActive = true
+        user.deviceUuid = request.uuid
+        user.confirmationCode = null // Limpa o código após o uso
+
+        val savedUser = repository.save(user)
+        return UserResponse(savedUser)
+    }
+
+    fun update(id: Long, request: UpdateUserRequest): UserResponse {
+        val user = repository.findById(id).orElseThrow { NotFoundException("Usuário não encontrado") }
+
+        request.name?.let { user.name = it }
+        request.description?.let { user.description = it }
+
+        return UserResponse(repository.save(user))
+    }
+
+    private fun generateConfirmationCode(): String {
+        return (100000..999999).random().toString() // Gera um código de 6 dígitos
     }
 
     fun saveAvatar(id: Long, avatar: MultipartFile): String {

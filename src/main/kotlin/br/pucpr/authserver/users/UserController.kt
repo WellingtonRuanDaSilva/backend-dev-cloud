@@ -39,16 +39,32 @@ class UserController(val service: UserService) {
         .let { ResponseEntity.status(HttpStatus.CREATED).body(it) }
 
     @PostMapping("/login")
-    fun login(
-        @Valid @RequestBody login: LoginRequest
-    ) = service.login(login.email!!, login.password!!)
+    fun login(@Valid @RequestBody request: LoginRequest): ResponseEntity<Any> {
+        val response = service.login(request)
 
-    @GetMapping("/{id}")
-    fun getById(
-        @PathVariable id: Long
-    ) = service.findById(id)
-        .let { service.toResponse(it) }
-        .let { ResponseEntity.ok(it) }
+        return if (response != null) {
+            // Logado com sucesso
+            ResponseEntity.ok(response)
+        } else {
+            // Requer confirmação por SMS
+            ResponseEntity.status(HttpStatus.ACCEPTED).build() // Retorna 202
+        }
+    }
+
+    @PostMapping("/confirm")
+    fun confirm(@Valid @RequestBody request: ConfirmUserRequest): ResponseEntity<UserResponse> {
+        // Se falhar, o serviço lançará NotFoundException (que o seu handler converte para 404)
+        val user = service.confirmUser(request)
+        return ResponseEntity.ok(user)
+    }
+
+    @PutMapping("/{id}")
+    fun update(
+        @PathVariable id: Long,
+        @Valid @RequestBody request: UpdateUserRequest
+    ): ResponseEntity<UserResponse> {
+        return ResponseEntity.ok(service.update(id, request))
+    }
 
     @SecurityRequirement(name = "jwt-auth")
     @PatchMapping("/{id}")

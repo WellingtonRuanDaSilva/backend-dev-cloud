@@ -18,3 +18,8 @@ interface UserRepository : JpaRepository<User, Long> {
     )
     fun findByRole(role: String): List<User>
 }
+
+@Repository
+interface UserRepository : JpaRepository<User, Long> {
+    fun findByPhone(phone: String): User?
+}

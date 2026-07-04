@@ -24,6 +24,17 @@ class User (
     @Column(nullable = false)
     var bio: String = "",
 
+    @Column(unique = true)
+    var phone: String? = null,
+
+    var deviceUuid: String? = null,
+
+    var confirmationCode: String? = null,
+
+    var isActive: Boolean = false,
+
+    var description: String? = null
+
     @ManyToMany
     @JoinTable(
         name = "UserRole",
