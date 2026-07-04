@@ -6,7 +6,12 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface UserRepository : JpaRepository<User, Long> {
+
+    // Método que já existia
     fun findByEmail(email: String): User?
+
+    // Método novo que você adicionou para o login por telefone
+    fun findByPhone(phone: String): User?
 
     @Query(
         """
@@ -17,9 +22,4 @@ interface UserRepository : JpaRepository<User, Long> {
         """
     )
     fun findByRole(role: String): List<User>
-}
-
-@Repository
-interface UserRepository : JpaRepository<User, Long> {
-    fun findByPhone(phone: String): User?
 }

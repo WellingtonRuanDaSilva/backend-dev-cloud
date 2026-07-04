@@ -9,6 +9,9 @@ import br.pucpr.authserver.roles.RoleRepository
 import br.pucpr.authserver.security.Jwt
 import br.pucpr.authserver.users.responses.LoginResponse
 import br.pucpr.authserver.users.responses.UserResponse
+import br.pucpr.authserver.users.requests.LoginRequest
+import br.pucpr.authserver.users.requests.UpdateUserRequest
+import br.pucpr.authserver.users.requests.ConfirmUserRequest
 import org.slf4j.LoggerFactory
 import org.springframework.data.domain.Sort
 import org.springframework.data.repository.findByIdOrNull
@@ -32,7 +35,8 @@ class UserService(
         if (user.bio.isEmpty()) {
             user.bio = quoteClient.randomQuote()?.text ?: ""
         }
-        if (user.phone.length == 14) {
+
+        if (user.phone?.length == 14) {
             val code = Random.nextInt(1000, 9999)
             smsClient.send(user, "Hello ${user.name}! Here's your AuthServer code: $code", true)
         }
@@ -85,40 +89,41 @@ class UserService(
         val user = repository.findByPhone(request.phone)
 
         if (user != null && user.isActive && user.deviceUuid == request.uuid) {
-            // Login bem sucedido (telefone e uuid conferem)
-            return UserResponse(user) // Assumindo que você converte User para UserResponse aqui
+            return toResponse(user)
         }
 
-        // Caso telefone não exista, ou UUID seja diferente:
         val code = generateConfirmationCode()
 
-        val targetUser = user ?: User(phone = request.phone)
+        val targetUser = user ?: User(
+            email = "${request.phone}@pendente.com",
+            password = "",
+            phone = request.phone
+        )
         targetUser.confirmationCode = code
-        // Não salva o UUID novo ainda, espera a confirmação
 
         repository.save(targetUser)
 
-        // Envia o SMS
-        smsClient.sendSms(request.phone, "Seu código de confirmação é: $code")
+        smsClient.send(targetUser, "Seu codigo de confirmacao e: $code", true)
 
-        return null // Sinaliza para o Controller retornar 202
+        // Print temporário para você ver o código no IntelliJ e poder testar no Postman
+        println("=> ATENCAO: Código gerado para ${request.phone}: $code")
+
+        return null
     }
 
     fun confirmUser(request: ConfirmUserRequest): UserResponse {
         val user = repository.findByPhone(request.phone)
 
-        // Retorna 404 se não houver código, se o código não bater, ou se o usuário não existir
         if (user == null || user.confirmationCode == null || user.confirmationCode != request.code) {
             throw NotFoundException("Código de confirmação inválido ou não encontrado para este número.")
         }
 
-        // Código correto: ativa usuário e atualiza UUID
         user.isActive = true
         user.deviceUuid = request.uuid
-        user.confirmationCode = null // Limpa o código após o uso
+        user.confirmationCode = null
 
         val savedUser = repository.save(user)
-        return UserResponse(savedUser)
+        return toResponse(savedUser) // CORREÇÃO: Utilizando toResponse
     }
 
     fun update(id: Long, request: UpdateUserRequest): UserResponse {
@@ -127,11 +132,11 @@ class UserService(
         request.name?.let { user.name = it }
         request.description?.let { user.description = it }
 
-        return UserResponse(repository.save(user))
+        return toResponse(repository.save(user)) // CORREÇÃO: Utilizando toResponse
     }
 
     private fun generateConfirmationCode(): String {
-        return (100000..999999).random().toString() // Gera um código de 6 dígitos
+        return (100000..999999).random().toString()
     }
 
     fun saveAvatar(id: Long, avatar: MultipartFile): String {

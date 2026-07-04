@@ -15,6 +15,7 @@ import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 import java.net.URI
+import br.pucpr.authserver.users.requests.ConfirmUserRequest
 
 @RestController
 @RequestMapping("/users")

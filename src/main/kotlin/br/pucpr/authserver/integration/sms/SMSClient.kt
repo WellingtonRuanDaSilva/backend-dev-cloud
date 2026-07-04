@@ -19,7 +19,11 @@ class SMSClient {
             .build()
 
     fun send(user: User, text: String, important: Boolean = false) {
-        if (user.phone.isBlank()) return
+        // Copiamos o valor para uma variável local para o Kotlin validar com segurança
+        val phoneToSend = user.phone
+
+        // isNullOrBlank() verifica se a variável é nula ou vazia sem dar erro
+        if (phoneToSend.isNullOrBlank()) return
 
         try {
             val type = if (important) "Transactional" else "Promotional"
@@ -30,7 +34,7 @@ class SMSClient {
 
             sns.publishAsync(
                 PublishRequest().apply {
-                    phoneNumber = user.phone
+                    phoneNumber = phoneToSend // Usa a variável local validada
                     message = text
                 }
             )

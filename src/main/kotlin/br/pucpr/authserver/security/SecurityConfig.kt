@@ -35,8 +35,9 @@ class SecurityConfig(
             .authorizeHttpRequests { requests ->
                 requests
                     .requestMatchers(HttpMethod.GET).permitAll()
-                    .requestMatchers(HttpMethod.POST, "/users").permitAll()
-                    .requestMatchers(HttpMethod.POST, "/users/login").permitAll()
+                    // Adicionamos o /users/confirm nesta linha abaixo:
+                    .requestMatchers(HttpMethod.POST, "/users", "/users/login", "/users/confirm").permitAll()
+                    .requestMatchers(HttpMethod.PUT, "/users/*").permitAll()
                     .requestMatchers("/h2-console/**").permitAll()
                     .anyRequest().authenticated()
             }

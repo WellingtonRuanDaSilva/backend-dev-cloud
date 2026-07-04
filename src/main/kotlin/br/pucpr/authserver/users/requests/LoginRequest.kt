@@ -7,8 +7,11 @@ data class LoginRequest(
     var email: String?,
 
     @NotBlank
-    var password: String?
+    var password: String?,
 
-    @field:NotBlank val phone: String,
-    @field:NotBlank val uuid: String
+    @field:NotBlank
+    val phone: String,
+
+    @field:NotBlank
+    val uuid: String
 )

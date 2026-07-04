@@ -13,9 +13,6 @@ class User (
     var email: String,
 
     @Column(nullable = false)
-    val phone: String,
-
-    @Column(nullable = false)
     var password: String,
 
     @Column(nullable = false)
@@ -24,6 +21,7 @@ class User (
     @Column(nullable = false)
     var bio: String = "",
 
+    // O telefone deve aparecer apenas uma vez.
     @Column(unique = true)
     var phone: String? = null,
 
@@ -33,7 +31,8 @@ class User (
 
     var isActive: Boolean = false,
 
-    var description: String? = null
+    // A vírgula no final desta linha é obrigatória!
+    var description: String? = null,
 
     @ManyToMany
     @JoinTable(
@@ -43,7 +42,7 @@ class User (
     )
     var roles: MutableSet<Role> = mutableSetOf(),
 
-    var avatar: String = AvatarService.DEFAULT_AVATAR,
+    var avatar: String = AvatarService.DEFAULT_AVATAR
 ) {
     @Transient
     fun isAdmin() = roles.any { it.name == "ADMIN" }
