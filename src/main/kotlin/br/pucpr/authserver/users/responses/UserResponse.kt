@@ -7,13 +7,20 @@ data class UserResponse(
     val email: String,
     val name: String,
     val bio: String,
-    val avatar: String
+    val avatar: String,
+    val description: String?,
+    val phone: String?,
+    val isActive: Boolean
 ) {
-    constructor(user: User, avatarUrl: String) : this(
+    // O construtor pega os dados da entidade User e joga para o Response
+    constructor(user: User, avatarUrl: String = "") : this(
         id = user.id!!,
         email = user.email,
         name = user.name,
         bio = user.bio,
-        avatar = avatarUrl
+        avatar = avatarUrl.ifEmpty { user.avatar },
+        description = user.description,
+        phone = user.phone,
+        isActive = user.isActive
     )
 }
